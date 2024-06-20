@@ -197,7 +197,7 @@ def progress_game():
         return game
     
     if game.step == 6: 
-        time.sleep(1) # show result page for 1 sec
+        time.sleep(1) # show result page for  sec
         game.step = 0
         game.rotate_dealer()
         save_game(game)
