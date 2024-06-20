@@ -29,3 +29,9 @@ jobs:
         source venv/bin/activate
         python setup.py build_ext --inplace
         ls -l
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: cython-build
+        path: hand_rank_monte_carlo.cpython-311-x86_64-linux-gnu.so
