@@ -1,5 +1,8 @@
 import time
 import random
+import os
+import sys
+sys.path.append(os.path.dirname(__file__))
 from hand_rank_monte_carlo import monte_carlo_simulation
 
 class Card:
