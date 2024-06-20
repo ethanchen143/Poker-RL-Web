@@ -89,13 +89,17 @@
             `).join('');
             $('#community-cards').html(communityCards);
 
-            const playerCards = data.players[0].hand.map(card => `
+            $('#player-chips').text(data.players[0].chips);
+            const playerCards = data.players[0].folded ? data.players[0].hand.map(card => `
+            <div class="card">
+                <img src="/images/cards/${card.rank}${card.suit}.svg" style="opacity: 0.5;" alt="${card.rank} of ${card.suit}">
+            </div>
+            `).join('') : data.players[0].hand.map(card => `
                 <div class="card">
                     <img src="/images/cards/${card.rank}${card.suit}.svg" alt="${card.rank} of ${card.suit}">
                 </div>
             `).join('');
             $('#player-cards').html(playerCards);
-            $('#player-chips').text(data.players[0].chips);
 
             // Update opponent 1
             $('#op1-chips').text(data.players[1].chips);
