@@ -2,6 +2,7 @@ import random
 from utils import evaluate_hand_strength, Card
 from bots.player import Player
 import json
+import fcntl
 
 class QLearningBot(Player):
     def __init__(self, name, chips, shared_q_table = None):
@@ -45,9 +46,11 @@ class QLearningBot(Player):
         if hand_strength == 0:
             hand_strength = evaluate_hand_strength(game,self,200)
         past_actions = game.actions
+        pot_stack_ratio = min(10,round(game.pots[0] * 10 / self.chips))
         return (
             game.stage,
             position,
+            pot_stack_ratio,
             hand_strength,
             tuple(past_actions),
         )
@@ -58,6 +61,11 @@ class QLearningBot(Player):
             return random.choice(legal_actions)  # Explore
         else:
             q_values = [self.q_table.get((state, action), 0) for action in legal_actions]
+            tmp = q_values
+            if state[0] == 'Pre-Flop' and state[1] == 'btn' and len(state[4]) == 0 and legal_actions[0] == 'fold':
+                tmp = tmp[1:]
+            if 0 in tmp:
+                return legal_actions[tmp.index(0)+(len(q_values)-len(tmp))] # If Value = 0, Explore
             max_q = max(q_values)
             return legal_actions[q_values.index(max_q)]  # Exploit
 
@@ -88,6 +96,8 @@ class QLearningBot(Player):
         
         q_table_filename = "./outputs/q_table.json"
         with open(q_table_filename, 'w') as q_table_file:
+            fcntl.flock(q_table_file, fcntl.LOCK_EX)  # Lock the file
             json.dump({str(k): v for k, v in self.q_table.items()}, q_table_file, indent=2)
-        
+            fcntl.flock(q_table_file, fcntl.LOCK_UN)  # Unlock the file
+            
         self.states_actions = []

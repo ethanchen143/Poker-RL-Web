@@ -319,7 +319,7 @@
         async function update() {
             const data = await $.get('/game/progress');
             updateGameState(data);
-            setTimeout(update, 1000);
+            setTimeout(update, 500);
         }
         $(document).ready(() => {
             update();

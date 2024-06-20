@@ -151,7 +151,6 @@ def progress_game():
         game.more_action = True
         game.stage = 'Flop'
         handle_bet_round_end()
-        time.sleep(1)
         save_game(game)
         return game
 
@@ -165,7 +164,6 @@ def progress_game():
         game.more_action = True
         game.stage = 'Turn'
         handle_bet_round_end()
-        time.sleep(1)
         save_game(game)
         return game
     
@@ -179,7 +177,6 @@ def progress_game():
         game.more_action = True
         game.stage = 'River'
         handle_bet_round_end()
-        time.sleep(1)
         save_game(game)
         return game
 
@@ -190,19 +187,17 @@ def progress_game():
             return game
         game.step += 1
         handle_bet_round_end()
-        time.sleep(1)
         save_game(game)
         return game
      
     if game.step == 5: # ends
         game.determine_winner()
         game.step += 1
-        time.sleep(1)
         save_game(game)
         return game
     
     if game.step == 6: 
-        time.sleep(3) # show result page for 3 sec
+        time.sleep(1) # show result page for 1 sec
         game.step = 0
         game.rotate_dealer()
         save_game(game)
@@ -214,9 +209,11 @@ def get_rec():
     position = game.get_player_position(0)
     hand_strength = evaluate_hand_strength(game, game.players[0], 200)
     past_actions = game.actions
+    pot_stack_ratio = min(10,round(game.pots[0] * 10 / game.players[0].chips))
     key = (
         game.stage,
         position,
+        pot_stack_ratio,
         hand_strength,
         tuple(past_actions),
     )
