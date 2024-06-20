@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://use.typekit.net/udc8kxf.css">
+    <link rel="stylesheet" href="/stylesheets/game.css">
+</head>
+<body>
+    <div class="container">
+        <div id="home">
+            <button class="bg-black p-2 rounded-full" id="home-button">
+                <i class="fas fa-home text-white"></i>
+            </button>
+        </div>
+        <div id="instruction">
+            <button class="bg-black p-2 rounded-full" id="instruction-button">
+                <i class="fas fa-question text-white"></i>
+            </button>
+        </div>
+        <div id="game-info">
+            <p>Current Game: 5/10 No Limit Hold'em</p>
+            <p>Get $5,000 Chips to Win the Game!</p>
+        </div>
+        <div id="instructionModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeModal">&times;</span>
+                <h2>Reinforced Poker</h2>
+                <p>Improve your poker skills by training with our AI bots in the game of <strong>Texas Hold'em</strong>!</p>
+                <ul>
+                    <li><strong>How it Works:</strong> The bots use a reinforcement learning technique <strong>(Q-learning)</strong> to make decisions. 
+                        Q-learning helps the bots learn the best actions to take in different scenarios. 
+                        The bots constantly improve by adjusting strategies to maximize their winnings. </li>
+                    <li><strong>Tips:</strong> Click tips button to see the current hand strength and recommended action to take according to the bot's Q-Value Table.</li>
+                    <li><strong>Learn More:</strong> Link to Article</li>
+                    <li>A project by <a href="https://www.blue-mirror.com" target="_blank"><strong>Ethan Chen</strong>💙</a></li>
+                </ul>
+            </div>
+        </div>
+        <!-- Pot Amount -->
+        <div class="pot-amount" id="pot-amount"></div>
+        <!-- Community Cards -->
+        <div class="community-cards" id="community-cards"></div>
+        <!-- Player Cards -->
+        <div class="player-cards" id="player-cards"></div>
+        <!-- Action Bar -->
+        <div class="action-bar" id="action-bar"></div>
+        <!-- Player Info -->
+        <div class="player-info">
+            <div class="chips">$<span id="player-chips"><%= game.players[0].chips %></span></div>
+            <div class="name">You</div>
+            <div class="action" id="you-action"></div>
+        </div>
+        <!-- Opponent 1 -->
+        <div class="opponent" id="op1">
+            <div class="chips">$<span id="op1-chips"><%= game.players[1].chips %></span></div>
+            <div class="name">Bot_Ricky</div>
+            <div class="action" id="op1-action"></div>
+            <div class="hand" id="op1-hand"></div>
+        </div>
+        <!-- Opponent 2 -->
+        <div class="opponent" id="op2">
+            <div class="chips">$<span id="op2-chips"><%= game.players[2].chips %></span></div>
+            <div class="name">Bot_Julian</div>
+            <div class="action" id="op2-action"></div>
+            <div class="hand" id="op2-hand"></div>
+        </div>
+        <div class="dealer-button" id="dealer-button">D</div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function updateGameState(data) {
+            if (data.players[0].chips >= 5000) {
+                endGame('Congratulations, You Win!');
+                return;
+            }
+            if (data.players[0].lose_game) {
+                endGame('Sorry, You Lost.');
+                return;
+            }
+
+            $('#pot-amount').text(`$${data.pots[0]}`);
+            const communityCards = data.community_cards.map(card => `
+                <div class="card">
+                    <img src="/images/cards/${card.rank}${card.suit}.svg" alt="${card.rank} of ${card.suit}">
+                </div>
+            `).join('');
+            $('#community-cards').html(communityCards);
+
+            const playerCards = data.players[0].hand.map(card => `
+                <div class="card">
+                    <img src="/images/cards/${card.rank}${card.suit}.svg" alt="${card.rank} of ${card.suit}">
+                </div>
+            `).join('');
+            $('#player-cards').html(playerCards);
+            $('#player-chips').text(data.players[0].chips);
+
+            // Update opponent 1
+            $('#op1-chips').text(data.players[1].chips);
+            const op1Hand = data.players[1].folded ? data.players[1].hand.map(card => `
+                <div class="card">
+                    <img src="/images/cards/${card.rank}${card.suit}.svg" style="opacity: 0.5;" alt="${card.rank} of ${card.suit}">
+                </div>
+            `).join('') : (data.step < 5) ? `
+                <div class="card">
+                    <img src="/images/cards/back.svg" alt="Card Back">
+                </div>
+                <div class="card">
+                    <img src="/images/cards/back.svg" alt="Card Back">
+                </div>
+            ` : data.players[1].hand.map(card => `
+                <div class="card">
+                    <img src="/images/cards/${card.rank}${card.suit}.svg" alt="${card.rank} of ${card.suit}">
+                </div>
+            `).join('');
+            $('#op1-hand').html(op1Hand);
+
+            // Update opponent 2
+            $('#op2-chips').text(data.players[2].chips);
+            const op2Hand = data.players[2].folded ? data.players[2].hand.map(card => `
+                <div class="card">
+                    <img src="/images/cards/${card.rank}${card.suit}.svg" style="opacity: 0.5;" alt="${card.rank} of ${card.suit}">
+                </div>
+            `).join('') : (data.step < 5) ? `
+                <div class="card">
+                    <img src="/images/cards/back.svg" alt="Card Back">
+                </div>
+                <div class="card">
+                    <img src="/images/cards/back.svg" alt="Card Back">
+                </div>
+            ` : data.players[2].hand.map(card => `
+                <div class="card">
+                    <img src="/images/cards/${card.rank}${card.suit}.svg" alt="${card.rank} of ${card.suit}">
+                </div>
+            `).join('');
+            $('#op2-hand').html(op2Hand);
+
+            if (data.player_legal_actions.length > 0) {
+                const actionsHtml = data.player_legal_actions.map(action => `
+                    <button class="action-button" data-action="${action}">${action}</button>
+                `).join('');
+                $('#action-bar').html(actionsHtml);
+                $('#action-bar').append('<button class="tips-button" id="tips-button">Tips</button>');
+            } else {
+                $('#action-bar').html('');
+            }
+
+            const lastRickyAction = getLastPlayerAction(data.log, 'Bot_Ricky');
+            $('#op1-action').text(lastRickyAction);
+
+            const lastJulianAction = getLastPlayerAction(data.log, 'Bot_Julian');
+            $('#op2-action').text(lastJulianAction);
+
+            const lastYouAction = getLastPlayerAction(data.log, 'You');
+            $('#you-action').text(lastYouAction);
+
+            positionDealerButton(data.dealer_position);
+        }
+
+        function getLastPlayerAction(log, playerName) {
+            for (let i = log.length - 1; i >= 0; i--) {
+                if (log[i].startsWith(playerName)) {
+                    const nameLength = playerName.length;
+                    return log[i].slice(nameLength + 1);
+                }
+            }
+            return ' ';
+        }
+
+        function displayRecommendation(recommendation) {
+            let recommendationDiv = $('#recommendation');
+            
+            // If the div doesn't exist, create it
+            if (recommendationDiv.length === 0) {
+                recommendationDiv = $('<div id="recommendation"></div>');
+                $('body').append(recommendationDiv);
+            }
+            
+            // Clear previous content
+            recommendationDiv.empty();
+            const lines = recommendation.split('\n');
+            let maxAction = '';
+            let maxValue = Number.NEGATIVE_INFINITY;
+            
+            const parsedLines = lines.map((line,index) => {
+                const parts = line.split(':');
+                if (parts.length === 2) {
+                    const action = parts[0].trim();
+                    const value = parseFloat(parts[1].trim());
+                    
+                    if (index != 0 && value > maxValue) {
+                        maxValue = value;
+                        maxAction = action;
+                    }
+                    
+                    return { action, value };
+                }
+                return { action: line, value: null }; // Return the line as-is if it doesn't match expected pattern
+            });
+            
+            // Add each line as a separate <p> element, highlighting the best action
+            parsedLines.forEach(({ action, value }) => {
+                if (value !== null) {
+                    if (action === maxAction) {
+                        recommendationDiv.append(`<p><strong>${action}: ${value}</strong></p>`);
+                    } else {
+                        recommendationDiv.append(`<p>${action}: ${value}</p>`);
+                    }
+                } else {
+                    recommendationDiv.append(`<p>${action}</p>`); // Append the unparsed line
+                }
+            });
+            
+            recommendationDiv.css({
+                'position': 'fixed', // Fixed positioning to stick to viewport
+                'bottom': '30vh', // Bottom right positioning
+                'right': '10vw',
+                'background': '#fff',
+                'border': '1px solid #000',
+                'padding': '10px',
+                'z-index': '1000',
+                'border-radius': '5px',
+                'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.1)',
+                'opacity':'0.75',
+            });
+        }  
+        
+        function hideRecommendation(){
+            let recommendationDiv = $('#recommendation');
+            if (recommendationDiv.length === 0) {
+                recommendationDiv = $('<div id="recommendation"></div>');
+                $('body').append(recommendationDiv);
+            }
+            recommendationDiv.empty();
+        }
+    
+        function positionDealerButton(dealerPosition) {
+            $('#dealer-button').css({top: '', left: '', bottom: '', right: ''});
+            if (dealerPosition === 0) {
+                $('#dealer-button').css({
+                    bottom: '42.5%',
+                    left: '48.5%' // Player position
+                });
+            } else if (dealerPosition === 1) {
+                $('#dealer-button').css({
+                    top: '25vh',
+                    left: '30vw' // Opponent 1 position
+                });
+            } else if (dealerPosition === 2) {
+                $('#dealer-button').css({
+                    top: '25vh',
+                    right: '30vw' // Opponent 2 position
+                });
+            }
+        }
+
+        function endGame(message) {
+            $('body').empty(); // Clear the body content
+            $('body').append(`
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: #FFD700; font-family: 'blenny', sans-serif; text-align: center;">
+                    <h1 style="font-size: max(4vh,4vw);">${message}</h1>
+                    <button id="restart-button" style="padding: 10px 20px; margin-top: 20px; font-size: 1.2em; cursor: pointer; border: none; background-color: #444; color: #fff; border-radius: 5px;">Try Again</button>
+                    <button id="home-button" style="padding: 10px 20px; margin-top: 20px; font-size: 1.2em; cursor: pointer; border: none; background-color: #444; color: #fff; border-radius: 5px;">Home</button>
+                </div>
+            `);
+        
+            $('#restart-button').on('click', function() {
+                window.location.href = '/game'; 
+            });
+            $('#home-button').on('click', function() {
+                window.location.href = '/'; 
+            });
+        }
+
+        // event handlers
+        $(document).ready(function() {
+
+            $('#home-button').on('click', function() {
+                window.location.href = '/'; 
+            });
+
+            var modal = document.getElementById('instructionModal');
+            var btn = document.getElementById('instruction-button');
+            var span = document.getElementById('closeModal');
+    
+            btn.onclick = function() {
+                modal.style.display = 'block';
+            }
+    
+            span.onclick = function() {
+                modal.style.display = 'none';
+            }
+    
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            $('#action-bar').on('click', '.tips-button', async function() {
+                const gameState = await $.get('/game/rec'); 
+                const recommendation = gameState.recommendation; 
+                displayRecommendation(recommendation);
+            });
+
+            $('#action-bar').on('click', '.action-button', async function() {
+                const action = $(this).data('action');
+                $('#action-bar').html('')
+                hideRecommendation();
+                const data = await $.get('/game/progress');
+                updateGameState(data);
+                await $.post('/game/action', { action: action });
+            });
+        });
+
+        // start the game loop
+        async function update() {
+            const data = await $.get('/game/progress');
+            updateGameState(data);
+            setTimeout(update, 1000);
+        }
+        $(document).ready(() => {
+            update();
+        });
+    </script>
+</body>
+</html>
