@@ -1,5 +1,8 @@
 from bots.rl_bot import QLearningBot, Player
 from utils import describe_hand, Deck, card_to_tuple, Card
+import os
+import sys
+sys.path.append(os.path.dirname(__file__))
 from hand_rank_monte_carlo import get_best_hand
 
 class PokerGame:
